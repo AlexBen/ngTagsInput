@@ -46,6 +46,7 @@
  * @param {expression=} [onTagRemoved=NA] Expression to evaluate upon removing an existing tag. The removed tag is
  *    available as $tag.
  * @param {expression=} [onTagClicked=NA] Expression to evaluate upon clicking an existing tag. The clicked tag is available as $tag.
+ * @param {boolean=} {validateOnKeydown=false} Flag indicating that validation will be performed on every added symbol.
  */
 tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInputConfig, tiUtil) {
     function TagList(options, events, onTagAdding, onTagRemoving) {
@@ -69,6 +70,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                    !tiUtil.findInObjectArray(self.items, tag, options.keyProperty || options.displayProperty) &&
                    onTagAdding({ $tag: tag });
         };
+
+        self.tagIsValid = tagIsValid;
 
         self.items = [];
 
@@ -189,7 +192,8 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 keyProperty: [String, ''],
                 allowLeftoverText: [Boolean, false],
                 addFromAutocompleteOnly: [Boolean, false],
-                spellcheck: [Boolean, true]
+                spellcheck: [Boolean, true],
+                validateOnKeydown: [Boolean, false]
             });
 
             $scope.tagList = new TagList($scope.options, $scope.events,
@@ -383,7 +387,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 .on('input-keydown', function(event) {
                     var key = event.keyCode,
                         addKeys = {},
-                        shouldAdd, shouldRemove, shouldSelect, shouldEditLastTag;
+                        shouldAdd, shouldRemove, shouldSelect, shouldEditLastTag, shouldValidate;
 
                     if (tiUtil.isModifierOn(event) || hotkeys.indexOf(key) === -1) {
                         return;
@@ -393,11 +397,17 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     addKeys[KEYS.comma] = options.addOnComma;
                     addKeys[KEYS.space] = options.addOnSpace;
 
+                    shouldValidate = options.validateOnKeydown;
                     shouldAdd = !options.addFromAutocompleteOnly && addKeys[key];
                     shouldRemove = (key === KEYS.backspace || key === KEYS.delete) && tagList.selected;
                     shouldEditLastTag = key === KEYS.backspace && scope.newTag.text().length === 0 && options.enableEditingLastTag;
                     shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && scope.newTag.text().length === 0 && !options.enableEditingLastTag;
 
+                    if (shouldValidate) {
+                        if (!tagList.tagIsValid($scope.newTag)) {
+                            events.trigger('invalid-tag');
+                        }
+                    }
                     if (shouldAdd) {
                         tagList.addText(scope.newTag.text());
                     }
