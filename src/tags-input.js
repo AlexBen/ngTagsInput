@@ -53,6 +53,9 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
         var self = {}, getTagText, setTagText, tagIsValid;
 
         getTagText = function(tag) {
+            if (angular.isFunction(tag.text)) {
+                return tag.text();
+            }
             return tiUtil.safeToString(tag[options.displayProperty]);
         };
 
@@ -303,6 +306,9 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     keydown: function($event) {
                         events.trigger('input-keydown', $event);
                     },
+                    keyup: function($event) {
+                        events.trigger('input-keyup', $event);
+                    },
                     focus: function() {
                         if (scope.hasFocus) {
                             return;
@@ -364,6 +370,16 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                 .on('invalid-tag', function() {
                     scope.newTag.invalid = true;
                 })
+                .on('input-keyup', function () {
+                    if (options.validateOnKeydown) {
+                        var tagMock = {};
+                        var prop = options.displayProperty;
+                        tagMock[prop] = scope.text;
+                        if (!tagList.tagIsValid(tagMock)) {
+                            events.trigger('invalid-tag');
+                        }
+                    }
+                })
                 .on('option-change', function(e) {
                     if (validationOptions.indexOf(e.name) !== -1) {
                         setElementValidity();
@@ -397,17 +413,11 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     addKeys[KEYS.comma] = options.addOnComma;
                     addKeys[KEYS.space] = options.addOnSpace;
 
-                    shouldValidate = options.validateOnKeydown;
                     shouldAdd = !options.addFromAutocompleteOnly && addKeys[key];
                     shouldRemove = (key === KEYS.backspace || key === KEYS.delete) && tagList.selected;
                     shouldEditLastTag = key === KEYS.backspace && scope.newTag.text().length === 0 && options.enableEditingLastTag;
                     shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && scope.newTag.text().length === 0 && !options.enableEditingLastTag;
 
-                    if (shouldValidate) {
-                        if (!tagList.tagIsValid(scope.newTag)) {
-                            events.trigger('invalid-tag');
-                        }
-                    }
                     if (shouldAdd) {
                         tagList.addText(scope.newTag.text());
                     }
