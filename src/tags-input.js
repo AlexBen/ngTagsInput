@@ -404,7 +404,7 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     shouldSelect = (key === KEYS.backspace || key === KEYS.left || key === KEYS.right) && scope.newTag.text().length === 0 && !options.enableEditingLastTag;
 
                     if (shouldValidate) {
-                        if (!tagList.tagIsValid($scope.newTag)) {
+                        if (!tagList.tagIsValid(scope.newTag)) {
                             events.trigger('invalid-tag');
                         }
                     }
