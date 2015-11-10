@@ -371,12 +371,14 @@ tagsInput.directive('tagsInput', function($timeout, $document, $window, tagsInpu
                     scope.newTag.invalid = true;
                 })
                 .on('input-keyup', function () {
-                    if (options.validateOnKeydown) {
+                    if (options.validateOnKeydown && scope.text.length) {
                         var tagMock = {};
                         var prop = options.displayProperty;
                         tagMock[prop] = scope.text;
                         if (!tagList.tagIsValid(tagMock)) {
                             events.trigger('invalid-tag');
+                        } else {
+                            scope.newTag.invalid = null;
                         }
                     }
                 })
